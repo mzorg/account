@@ -47,3 +47,24 @@ exports.setCredit = (req, res, next) => {
             next(err);
         });
 };
+
+// =====================
+// Create account
+// =====================
+exports.createAccount = (req, res, next) => {
+    let account = new Account({
+        userId: req.user.id
+    });
+    account.save(
+        (err, accountDB) => {
+        // If there was a error
+        if (err)
+            err.status = 500;
+            next(err);
+        // Return created order
+        return res.json({
+            ok: true,
+            data: accountDB
+        });
+    });
+};
