@@ -41,7 +41,7 @@ exports.checkCredit = async (req, res, next) => {
 // =====================
 // Increase credit
 // =====================
-exports.setCredit = (req, res, next) => {
+exports.setCredit = async (req, res, next) => {
     // Check if user is the owner of account
     try {
         await isOwner(req);
