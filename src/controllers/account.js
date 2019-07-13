@@ -7,10 +7,11 @@ let conf = require('../config/config');
 // Check credit
 // =====================
 exports.checkCredit = async (req, res, next) => {
-    // Check if user is the owner of account
+    // Check if user is the owner of account or is 'Admin'
     try {
-        await isOwner(req);
-    } catch {
+        if (!await isOwner(req) || req.user.role !== 'Admin')
+            throw new Error("You are not authorized to edit this account")
+    } catch(err) {
         // Return error response
         err.status = 500;
         next(err);
@@ -42,14 +43,16 @@ exports.checkCredit = async (req, res, next) => {
 // Increase credit
 // =====================
 exports.setCredit = async (req, res, next) => {
-    // Check if user is the owner of account
+    // Check if user is the owner of account or is 'Admin'
     try {
-        await isOwner(req);
-    } catch {
+        if (!await isOwner(req) || req.user.role !== 'Admin')
+            throw new Error("You are not authorized to edit this account")
+    } catch(err) {
         // Return error response
         err.status = 500;
         next(err);
     }
+
     let accountId = req.params.id;
     let body = req.body; // parse body request
     let amount = body.amount;
