@@ -1,14 +1,28 @@
 const Account = require('../models/account');
+const isOwner = require('../middleware/isOwner');
 const axios = require('axios');
 let conf = require('../config/config');
 
 // =====================
 // Check credit
 // =====================
-exports.checkCredit = (req, res, next) => {
+exports.checkCredit = async (req, res, next) => {
+    // Check if user is the owner of account
+    try {
+        await isOwner(req);
+    } catch {
+        // Return error response
+        err.status = 500;
+        next(err);
+    }
+
     let accountId = req.params.id;
-    Account.find({_id: accountId})
+    Account.findById(accountId)
         .then(account => {
+            // Check account existence
+            if (!account) {
+                throw new Error("Account does not exist");
+            }
             // Return account
             return res.json({
                 ok: true,
@@ -28,11 +42,23 @@ exports.checkCredit = (req, res, next) => {
 // Increase credit
 // =====================
 exports.setCredit = (req, res, next) => {
+    // Check if user is the owner of account
+    try {
+        await isOwner(req);
+    } catch {
+        // Return error response
+        err.status = 500;
+        next(err);
+    }
     let accountId = req.params.id;
     let body = req.body; // parse body request
     let amount = body.amount;
-    Account.findOneAndUpdate({_id: accountId}, {credit: amount})
+    Account.findOneAndUpdate({_id: accountId}, {credit: amount}, {new: true})
         .then(account => {
+            // Check account existence
+            if (!account) {
+                throw new Error("Account does not exist");
+            }
             // Return account
             return res.json({
                 ok: true,
