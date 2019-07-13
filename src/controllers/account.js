@@ -80,20 +80,43 @@ exports.setCredit = async (req, res, next) => {
 // =====================
 // Create account
 // =====================
-exports.createAccount = (req, res, next) => {
+exports.createAccount = async (req, res, next) => {
+    let userId;
+    // If user is 'Admin' can create account for a given userId, if not,
+    // you can create a account for yourself
+    if (req.user.role == 'Admin') {
+        userId = req.body.userId;
+    } else {
+        userId = req.user.id;
+    }
     let account = new Account({
         userId: req.user.id
     });
-    account.save(
-        (err, accountDB) => {
+    // Check if the user has already an account
+    Account.find({userId}, (err, account) => {
         // If there was a error
-        if (err)
+        if (err) {
             err.status = 500;
             next(err);
-        // Return created order
-        return res.json({
-            ok: true,
-            data: accountDB
+        }
+        // Check account existence
+        if (account) {
+            err.status = 401;
+            next(new Error("The user has an account"));
+        }
+        // If account not exists, create a new one
+        account.save(
+            (err, accountDB) => {
+            // If there was a error
+            if (err) {
+                err.status = 500;
+                next(err);
+            }
+            // Return created order
+            return res.json({
+                ok: true,
+                data: accountDB
+            });
         });
     });
 };
