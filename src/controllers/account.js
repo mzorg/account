@@ -9,34 +9,31 @@ let conf = require('../config/config');
 exports.checkCredit = async (req, res, next) => {
     // Check if user is the owner of account or is 'Admin'
     try {
-        if (!await isOwner(req) || req.user.role !== 'Admin')
+        let ownership = await isOwner(req);
+        if (!ownership && req.user.role != 'Admin')
             throw new Error("You are not authorized to edit this account")
     } catch(err) {
         // Return error response
-        err.status = 500;
+        err.status = 401;
         next(err);
-    }
+    } 
 
     let accountId = req.params.id;
-    Account.findById(accountId)
-        .then(account => {
-            // Check account existence
-            if (!account) {
-                throw new Error("Account does not exist");
+    Account.findById(accountId, (err, account) => {
+        // Check account existence again
+        if (!account) {
+            let err = new Error("Account does not exists");
+            err.status = 404;
+            return next(err);
+        }
+        // Return account
+        return res.json({
+            ok: true,
+            data: {
+                credit: account.credit
             }
-            // Return account
-            return res.json({
-                ok: true,
-                data: {
-                    credit: account.credit
-                }
-            });
-        })
-        .catch(err => {
-            // Return error response
-            err.status = 500;
-            next(err);
         });
+    })
 };
 
 // =====================
@@ -45,36 +42,38 @@ exports.checkCredit = async (req, res, next) => {
 exports.setCredit = async (req, res, next) => {
     // Check if user is the owner of account or is 'Admin'
     try {
-        if (!await isOwner(req) || req.user.role !== 'Admin')
+        let ownership = await isOwner(req);
+        if (!ownership && req.user.role != 'Admin')
             throw new Error("You are not authorized to edit this account")
     } catch(err) {
         // Return error response
-        err.status = 500;
+        err.status = 401;
         next(err);
-    }
+    } 
 
     let accountId = req.params.id;
     let body = req.body; // parse body request
     let amount = body.amount;
-    Account.findOneAndUpdate({_id: accountId}, {credit: amount}, {new: true})
-        .then(account => {
-            // Check account existence
-            if (!account) {
-                throw new Error("Account does not exist");
-            }
-            // Return account
-            return res.json({
-                ok: true,
-                data: {
-                    credit: account.credit
-                }
-            });
-        })
-        .catch(err => {
-            // Return error response
+    Account.findOneAndUpdate({_id: accountId}, {credit: amount}, {new: true}, (err, account) => {
+        // Check errors
+        if (err) {
             err.status = 500;
-            next(err);
+            return next(err);
+        }
+        // Check account existence
+        if (!account) {
+            let err = new Error("The user has an account");
+            err.status = 400;
+            return next(err);
+        }
+        // Return account
+        return res.json({
+            ok: true,
+            data: {
+                credit: account.credit
+            }
         });
+    });
 };
 
 // =====================
@@ -89,28 +88,29 @@ exports.createAccount = async (req, res, next) => {
     } else {
         userId = req.user.id;
     }
-    let account = new Account({
-        userId: req.user.id
+    let accountNew = new Account({
+        userId
     });
     // Check if the user has already an account
-    Account.find({userId}, (err, account) => {
+    Account.findOne({userId}, (err, account) => {
         // If there was a error
         if (err) {
             err.status = 500;
-            next(err);
+            return next(err);
         }
         // Check account existence
         if (account) {
-            err.status = 401;
-            next(new Error("The user has an account"));
+            let err = new Error("The user has an account");
+            err.status = 400;
+            return next(err);
         }
         // If account not exists, create a new one
-        account.save(
+        accountNew.save(
             (err, accountDB) => {
             // If there was a error
             if (err) {
                 err.status = 500;
-                next(err);
+                return next(err);
             }
             // Return created order
             return res.json({
