@@ -1,4 +1,5 @@
 const Account = require('../models/account');
+
 // =====================
 // Verify Account ownership
 // =====================
@@ -9,21 +10,21 @@ module.exports = async (req) => {
         // Verify if account belongs to logged user
         Account.findById(accountId, (err, account) => {
                 if (err) {
-                    reject(err);
+                    return reject(err);
                 }
                 if (!account) {
                     let err = new Error('The account does not exists');
                     err.status = 404;
-                    reject(err);
+                    return reject(err);
                 }
                 if (account.userId == userId) {
-                    resolve(true);
+                    return resolve(true);
                 }
                 // If logued userId is equals to account userId
                 if (account.userId == userId) {
-                    resolve(true);
+                    return resolve(true);
                 } else {
-                    resolve(false);
+                    return resolve(false);
                 }
             })
     });

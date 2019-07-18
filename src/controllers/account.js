@@ -1,23 +1,10 @@
 const Account = require('../models/account');
-const isOwner = require('../middleware/isOwner');
-const axios = require('axios');
 let conf = require('../config/config');
 
 // =====================
 // Check credit
 // =====================
 exports.checkCredit = async (req, res, next) => {
-    // Check if user is the owner of account or is 'Admin'
-    try {
-        let ownership = await isOwner(req);
-        if (!ownership && req.user.role != 'Admin')
-            throw new Error("You are not authorized to edit this account")
-    } catch(err) {
-        // Return error response
-        err.status = 401;
-        next(err);
-    } 
-
     let accountId = req.params.id;
     Account.findById(accountId, (err, account) => {
         // Check account existence again
@@ -40,16 +27,6 @@ exports.checkCredit = async (req, res, next) => {
 // Increase credit
 // =====================
 exports.setCredit = async (req, res, next) => {
-    // Check if user is the owner of account or is 'Admin'
-    try {
-        let ownership = await isOwner(req);
-        if (!ownership && req.user.role != 'Admin')
-            throw new Error("You are not authorized to edit this account")
-    } catch(err) {
-        // Return error response
-        err.status = 401;
-        next(err);
-    } 
 
     let accountId = req.params.id;
     let body = req.body; // parse body request
