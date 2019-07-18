@@ -97,3 +97,30 @@ exports.createAccount = async (req, res, next) => {
         });
     });
 };
+
+// =====================
+// Get accountId for a given userId
+// =====================
+exports.getAccountId = async (req, res, next) => {
+    let userId = req.params.userId;
+    Account.findOne({userId}, (err, account) => {
+        // If there was a error
+        if (err) {
+            err.status = 500;
+            return next(err);
+        }
+        // Check account existence
+        if (!account) {
+            let err = new Error("The user does not have an account");
+            err.status = 400;
+            return next(err);
+        }
+        // Return accountId
+        return res.json({
+            ok: true,
+            data: {
+                accountId: account._id
+            }
+        });
+    });
+}
